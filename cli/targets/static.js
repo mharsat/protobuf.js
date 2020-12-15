@@ -129,38 +129,6 @@ function removeTypeNameSuffix(name) {
     return name.endsWith(TYPE_NAME_SUFFIX) ? name.slice(0,-1 * TYPE_NAME_SUFFIX.length) : name;
 }
 
-function isFieldOptional(field) {
-  return field.optional && !(field.options && field.options.required);
-}
-
-var TYPE_NAME_SUFFIX = "Message";
-
-function addTypeNameSuffix(name) {
-  return name + TYPE_NAME_SUFFIX;
-}
-
-function removeTypeNameSuffix(name) {
-  return name.endsWith(TYPE_NAME_SUFFIX)
-    ? name.slice(0, -1 * TYPE_NAME_SUFFIX.length)
-    : name;
-}
-
-function isFieldOptional(field) {
-  return field.optional && !(field.options && field.options.required);
-}
-
-var TYPE_NAME_SUFFIX = "Message";
-
-function addTypeNameSuffix(name) {
-  return name + TYPE_NAME_SUFFIX;
-}
-
-function removeTypeNameSuffix(name) {
-  return name.endsWith(TYPE_NAME_SUFFIX)
-    ? name.slice(0, -1 * TYPE_NAME_SUFFIX.length)
-    : name;
-}
-
 function buildNamespace(ref, ns) {
   if (!ns) return;
   if (ns.name !== "") {
