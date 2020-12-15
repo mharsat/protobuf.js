@@ -90,7 +90,7 @@ function exportName(object, asInterface) {
     while (i < parts.length)
         parts[i] = escapeName(parts[i++]);
     if (asInterface)
-        parts[i - 1] = "I" + parts[i - 1];
+        parts[i - 1] = removeTypeNameSuffix(parts[i - 1]);
     return object[asInterface ? "__interfaceName" : "__exportName"] = parts.join(".");
 }
 
@@ -113,7 +113,7 @@ function isFieldOptional(field) {
 var TYPE_NAME_SUFFIX = "Message";
 
 function addTypeNameSuffix(name) {
-  return name + TYPE_NAME_SUFFIX;
+  return !name.endsWith(TYPE_NAME_SUFFIX) ? name + TYPE_NAME_SUFFIX : name;
 }
 
 function removeTypeNameSuffix(name) {
@@ -123,7 +123,13 @@ function buildNamespace(ref, ns) {
     if (!ns)
         return;
     if (ns.name !== "") {
-        ns.name = addTypeNameSuffix(ns.name);
+        switch (ns.name) {
+            case 'google':
+            case 'protobuf':
+                break
+            default:
+                ns.name = addTypeNameSuffix(ns.name);
+        }
         push("");
         if (!ref && config.es6)
             push("export const " + escapeName(ns.name) + " = " + escapeName(ref) + "." + escapeName(ns.name) + " = (() => {");
@@ -271,7 +277,7 @@ function buildFunction(type, functionName, gen, scope) {
             )
                 return {
                     "type": "Identifier",
-                    "name": "$root" + type.fieldsArray[node.property.value].resolvedType.fullName
+                    "name": "$root" + addTypeNameSuffix(type.fieldsArray[node.property.value].resolvedType.fullName)
                 };
             return undefined;
         }
