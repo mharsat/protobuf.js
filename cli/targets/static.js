@@ -90,7 +90,7 @@ function exportName(object, asInterface) {
     while (i < parts.length)
         parts[i] = escapeName(parts[i++]);
     if (asInterface)
-        parts[i - 1] = removeTypeNameSuffix(parts[i - 1]);
+        parts[i - 1] = "I" + parts[i - 1];
     return object[asInterface ? "__interfaceName" : "__exportName"] = parts.join(".");
 }
 
@@ -109,32 +109,10 @@ function aOrAn(name) {
 function isFieldOptional(field) {
   return field.optional && !(field.options && field.options.required);
 }
-
-var TYPE_NAME_SUFFIX = "Message";
-
-function addTypeNameSuffix(name) {
-  return !name.endsWith(TYPE_NAME_SUFFIX) ? name + TYPE_NAME_SUFFIX : name;
-}
-
-function removeTypeNameSuffix(name) {
-    if (name.includes('.')) {
-        name = name.split('.').map(function(part) {
-            return removeTypeNameSuffix(part)
-        }).join('.');
-    }
-    return name.endsWith(TYPE_NAME_SUFFIX) ? name.slice(0,-1 * TYPE_NAME_SUFFIX.length) : name;
-}
 function buildNamespace(ref, ns) {
     if (!ns)
         return;
     if (ns.name !== "") {
-        switch (ns.name) {
-            case 'google':
-            case 'protobuf':
-                break
-            default:
-                ns.name = addTypeNameSuffix(ns.name);
-        }
         push("");
         if (!ref && config.es6)
             push("export const " + escapeName(ns.name) + " = " + escapeName(ref) + "." + escapeName(ns.name) + " = (() => {");
@@ -282,7 +260,7 @@ function buildFunction(type, functionName, gen, scope) {
             )
                 return {
                     "type": "Identifier",
-                    "name": "$root" + addTypeNameSuffix(type.fieldsArray[node.property.value].resolvedType.fullName)
+                    "name": "$root" + type.fieldsArray[node.property.value].resolvedType.fullName
                 };
             return undefined;
         }
@@ -380,16 +358,13 @@ function buildType(ref, type) {
     if (config.comments) {
         var typeDef = [
             "Properties of " + aOrAn(type.name) + ".",
-            type.parent instanceof protobuf.Root ? "@exports " + escapeName(removeTypeNameSuffix(type.name)) : "@memberof " + exportName(type.parent),
-            "@interface " + escapeName(removeTypeNameSuffix(type.name))
+            type.parent instanceof protobuf.Root ? "@exports " + escapeName("I" + type.name) : "@memberof " + exportName(type.parent),
+            "@interface " + escapeName("I" + type.name)
         ];
         type.fieldsArray.forEach(function(field) {
             var prop = util.safeProp(field.name); // either .name or ["name"]
             prop = prop.substring(1, prop.charAt(0) === "[" ? prop.length - 1 : prop.length);
             var jsType = toJsType(field);
-            if (field.resolvedType instanceof protobuf.Enum) {
-                jsType = removeTypeNameSuffix(jsType);
-            }
             var isOptional = isFieldOptional(field);
             if (isOptional)
                 jsType = jsType + "|null";
@@ -405,7 +380,7 @@ function buildType(ref, type) {
         "Constructs a new " + type.name + ".",
         type.parent instanceof protobuf.Root ? "@exports " + escapeName(type.name) : "@memberof " + exportName(type.parent),
         "@classdesc " + (type.comment || "Represents " + aOrAn(type.name) + "."),
-        config.comments ? "@implements " + escapeName(removeTypeNameSuffix(type.name)) : null,
+        config.comments ? "@implements " + escapeName("I" + type.name) : null,
         "@constructor",
         "@param {" + exportName(type, true) + "=} [" + (config.beautify ? "properties" : "p") + "] Properties to set"
     ]);
@@ -419,9 +394,6 @@ function buildType(ref, type) {
         if (config.comments) {
             push("");
             var jsType = toJsType(field);
-            if (field.resolvedType instanceof protobuf.Enum) {
-                jsType = removeTypeNameSuffix(jsType);
-            }
             var isOptional = isFieldOptional(field);
             if (isOptional && !field.map && !field.repeated && field.resolvedType instanceof Type)
                 jsType = jsType + "|null|undefined";
@@ -601,7 +573,9 @@ function buildType(ref, type) {
             "@returns {Object.<string,*>} Plain object"
         ]);
         buildFunction(type, "toObject", protobuf.converter.toObject(type));
-
+    }
+    
+    if (config.instance) {
         push("");
         pushComment([
             "Converts this " + type.name + " to JSON.",
@@ -707,7 +681,7 @@ function buildEnum(ref, enm) {
     push("");
     var comment = [
         enm.comment || enm.name + " enum.",
-        enm.parent instanceof protobuf.Root ? "@exports " + escapeName(enm.name) : "@name " + removeTypeNameSuffix(exportName(enm)),
+        enm.parent instanceof protobuf.Root ? "@exports " + escapeName(enm.name) : "@name " + exportName(enm),
         config.forceEnumString ? "@enum {string}" : "@enum {number}",
     ];
     Object.keys(enm.values).forEach(function(key) {
@@ -716,9 +690,9 @@ function buildEnum(ref, enm) {
     });
     pushComment(comment);
     if (!ref && config.es6)
-        push("export const " + escapeName(enm.name) + " = " + removeTypeNameSuffix(escapeName(ref)) + "." + escapeName(enm.name) + " = (() => {");
+        push("export const " + escapeName(enm.name) + " = " + escapeName(ref) + "." + escapeName(enm.name) + " = (() => {");
     else
-        push(removeTypeNameSuffix(escapeName(ref)) + "." + escapeName(enm.name) + " = (function() {");
+        push(escapeName(ref) + "." + escapeName(enm.name) + " = (function() {");
     ++indent;
         push((config.es6 ? "const" : "var") + " valuesById = {}, values = Object.create(valuesById);");
         var aliased = [];
