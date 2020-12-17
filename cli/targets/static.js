@@ -117,7 +117,12 @@ function addTypeNameSuffix(name) {
 }
 
 function removeTypeNameSuffix(name) {
-  return name.endsWith(TYPE_NAME_SUFFIX) ? name.slice(0,-1 * TYPE_NAME_SUFFIX.length) : name;
+    if (name.includes('.')) {
+        name = name.split('.').map(function(part) {
+            return removeTypeNameSuffix(part)
+        }).join('.');
+    }
+    return name.endsWith(TYPE_NAME_SUFFIX) ? name.slice(0,-1 * TYPE_NAME_SUFFIX.length) : name;
 }
 function buildNamespace(ref, ns) {
     if (!ns)
@@ -382,6 +387,9 @@ function buildType(ref, type) {
             var prop = util.safeProp(field.name); // either .name or ["name"]
             prop = prop.substring(1, prop.charAt(0) === "[" ? prop.length - 1 : prop.length);
             var jsType = toJsType(field);
+            if (field.resolvedType instanceof protobuf.Enum) {
+                jsType = removeTypeNameSuffix(jsType);
+            }
             var isOptional = isFieldOptional(field);
             if (isOptional)
                 jsType = jsType + "|null";
@@ -411,6 +419,9 @@ function buildType(ref, type) {
         if (config.comments) {
             push("");
             var jsType = toJsType(field);
+            if (field.resolvedType instanceof protobuf.Enum) {
+                jsType = removeTypeNameSuffix(jsType);
+            }
             var isOptional = isFieldOptional(field);
             if (isOptional && !field.map && !field.repeated && field.resolvedType instanceof Type)
                 jsType = jsType + "|null|undefined";
@@ -696,7 +707,7 @@ function buildEnum(ref, enm) {
     push("");
     var comment = [
         enm.comment || enm.name + " enum.",
-        enm.parent instanceof protobuf.Root ? "@exports " + escapeName(enm.name) : "@name " + exportName(enm),
+        enm.parent instanceof protobuf.Root ? "@exports " + escapeName(enm.name) : "@name " + removeTypeNameSuffix(exportName(enm)),
         config.forceEnumString ? "@enum {string}" : "@enum {number}",
     ];
     Object.keys(enm.values).forEach(function(key) {
@@ -705,9 +716,9 @@ function buildEnum(ref, enm) {
     });
     pushComment(comment);
     if (!ref && config.es6)
-        push("export const " + escapeName(enm.name) + " = " + escapeName(ref) + "." + escapeName(enm.name) + " = (() => {");
+        push("export const " + escapeName(enm.name) + " = " + removeTypeNameSuffix(escapeName(ref)) + "." + escapeName(enm.name) + " = (() => {");
     else
-        push(escapeName(ref) + "." + escapeName(enm.name) + " = (function() {");
+        push(removeTypeNameSuffix(escapeName(ref)) + "." + escapeName(enm.name) + " = (function() {");
     ++indent;
         push((config.es6 ? "const" : "var") + " valuesById = {}, values = Object.create(valuesById);");
         var aliased = [];
