@@ -152,6 +152,10 @@ function buildNamespace(ref, ns) {
         push("return " + escapeName(ns.name) + ";");
         --indent;
         push("})();");
+        if (!config.es6 && escapeName(ref) === "$root") {
+            push("");
+            push("exports." + escapeName(ns.name) + " = " + escapeName(ref) + "." + escapeName(ns.name) + ";");
+        }
     }
 }
 
