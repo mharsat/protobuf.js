@@ -580,7 +580,7 @@ function buildType(ref, type) {
             "@static",
             "@param {" + exportName(type) + "} " + (config.beautify ? "message" : "m") + " " + type.name,
             "@param {$protobuf.IConversionOptions} [" + (config.beautify ? "options" : "o") + "] Conversion options",
-            "@returns {" + addI(exportName(type)) + "} " + type.name
+            "@returns {Object.<string,*>} Plain object"
         ]);
         buildFunction(type, "toObject", protobuf.converter.toObject(type));
     }
